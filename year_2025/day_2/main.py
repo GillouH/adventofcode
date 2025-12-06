@@ -28,11 +28,13 @@ def main() -> None:
     for current_range in ranges:
         for id in current_range:
             id_str: str = str(id)
-            if len(id_str) % 2 == 0:
-                first_part: str = id_str[:int(len(id_str) / 2)]
-                second_part: str = id_str[int(len(id_str) / 2):]
-                if first_part == second_part:
-                    invalid_ids.append(id)
+            for pattern_size in range(1, int(len(id_str) / 2) + 1):
+                if len(id_str) % pattern_size == 0:
+                    pattern: str = id_str[:pattern_size]
+                    nb_repetition: int = int(len(id_str) / pattern_size)
+                    if id_str == pattern * nb_repetition:
+                        invalid_ids.append(id)
+                        break
 
     print(sum(invalid_ids))
 
