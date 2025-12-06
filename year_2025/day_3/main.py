@@ -53,7 +53,9 @@ def main() -> None:
     ))
 
     max_joltages: tuple[int, ...] = tuple(map(
-        lambda bank: bank.find_max_joltage(),
+        lambda bank: bank.find_max_joltage(
+            p_nb_digits_to_use=12,
+        ),
         banks,
     ))
 
