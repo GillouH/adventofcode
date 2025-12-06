@@ -3,6 +3,7 @@
 
 import pathlib
 import encodings
+import typing
 
 inputs_file_path: pathlib.Path = pathlib.Path("inputs.txt")
 
@@ -24,33 +25,32 @@ class Dial:
 
     def __turn_up(
         self,
-        p_nb_clicks: int = 1,
     ):
-        self.__position = (self.__position + p_nb_clicks) % len(self.numbers)
+        self.__position = (self.__position + 1) % len(self.numbers)
 
     def __turn_down(
         self,
-        p_nb_clicks: int = 1,
     ):
-        self.__position = (self.__position - p_nb_clicks) % len(self.numbers)
+        self.__position = (self.__position - 1) % len(self.numbers)
 
     def move(
         self,
         p_rotation: str,
-    ) -> int:
+    ) -> typing.Generator[int, None, None]:
         assert len(p_rotation) > 1
         direction: str = p_rotation[0]
         nb_clicks: str = p_rotation[1:]
         assert direction in ("L", "R")
         assert nb_clicks.isdecimal()
-        (
+        method_to_turn = (
             self.__turn_down
             if direction == "L" else
             self.__turn_up
-        )(
-            p_nb_clicks=int(nb_clicks)
         )
-        return self.pointing_number
+
+        for _ in range(int(nb_clicks)):
+            method_to_turn()
+            yield self.pointing_number
 
 
 def main() -> None:
@@ -63,10 +63,10 @@ def main() -> None:
 
     nb_position_at_0: int = int(my_dial.pointing_number == 0)
     for rotation in rotations:
-        my_dial.move(
+        pointing_number: tuple[int, ...] = tuple(my_dial.move(
             p_rotation=rotation,
-        )
-        nb_position_at_0 += int(my_dial.pointing_number == 0)
+        ))
+        nb_position_at_0 += pointing_number.count(0)
 
     print(nb_position_at_0)
 
