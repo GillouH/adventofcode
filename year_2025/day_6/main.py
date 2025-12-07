@@ -17,37 +17,57 @@ class Worksheet:
         self,
         p_data: str,
     ):
-        lines: list[list[str]] = list(map(
-            lambda line: list(filter(
-                lambda elem: len(elem),
-                line.split(),
-            )),
-            p_data.splitlines()
-        ))
-        nb_columns: int = len(lines[0])
-        assert all(
-            len(line) == nb_columns
-            for line in lines[1:]
-        )
+        lines: list[str] = p_data.splitlines()
+        last_line: str = lines.pop()
+        self.__columns_data: list[tuple[str, int, list[str]]] = list()
+        column_size: int = 1
+        actual_ope: str = last_line[0]
+        for elem in last_line[1:]:
+            if elem == " ":
+                column_size += 1
+            elif elem in ("*", "+"):
+                column_size -= 1
+                self.__columns_data.append((actual_ope, column_size, list()))
+                actual_ope = elem
+                column_size = 1
+            else:
+                raise Exception(f"{elem=}")
+        else:
+            self.__columns_data.append((actual_ope, column_size, list()))
 
-        self.__columns: list[list[str | int]] = [[] for _ in range(nb_columns)]
         for line in lines:
-            for index, elem in enumerate(line):
-                self.__columns[index].append(
-                    int(elem)
-                    if line != lines[-1] else
-                    elem
+            index: int = 0
+            for _, column_size, column_numbers in self.__columns_data:
+                column_numbers.append(
+                    line[index:index + column_size]
                 )
+                index += column_size + 1
+
+    def get_column_numbers(
+        self,
+        p_index: int,
+    ) -> typing.Generator[int, None, None]:
+        column_size, numbers = self.__columns_data[p_index][1:]
+        for index_in_column in range(column_size-1, -1, -1):
+            v_number: str = "".join(
+                h_number[index_in_column]
+                for h_number in numbers
+            )
+            yield int(v_number)
 
     def process_column(
         self,
         p_index: int,
     ) -> int:
-        if self.__columns[p_index][-1] == "+":
-            result: int = sum(self.__columns[p_index][:-1])
+        if self.__columns_data[p_index][0] == "+":
+            result: int = sum(self.get_column_numbers(
+                p_index=p_index,
+            ))
         else:
             result: int = 1
-            for elem in self.__columns[p_index][:-1]:
+            for elem in self.get_column_numbers(
+                p_index=p_index,
+            ):
                 result *= elem
         return result
 
@@ -56,7 +76,7 @@ class Worksheet:
     ) -> typing.Generator[int, None, None]:
         return (self.process_column(
             p_index=index,
-        ) for index in range(len(self.__columns)))
+        ) for index in range(len(self.__columns_data)))
 
     def solve_problem(
         self,
@@ -70,7 +90,25 @@ def main() -> None:
             encoding=encodings.utf_8.getregentry().name,
         ),
     )
-    print(worksheet.solve_problem())
+
+    if TEST:
+        for i in range(4):
+            print(f"Nombre dans la colonne {i}")
+            print(list(worksheet.get_column_numbers(
+                p_index=i,
+            )))
+            print(f"Résultat de l'opération de la colonne {i}")
+            print(worksheet.process_column(
+                p_index=i,
+            ))
+            print()
+        print("Résultat de l'ensemble des colonnes")
+        print(tuple(worksheet.process_all_columns()))
+
+        print("Somme des résultats")
+        print(worksheet.solve_problem())
+    else:
+        print(worksheet.solve_problem())
 
 
 if __name__ == "__main__":
