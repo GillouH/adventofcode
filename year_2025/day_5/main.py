@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import pathlib
 import encodings
+import pathlib
 import typing
 
 TEST: bool = False
@@ -34,6 +34,10 @@ class Database:
             else:
                 self.__ids.append(int(line))
 
+        self.__ranges.sort(
+            key=lambda l_range: (l_range.start, l_range.stop - l_range.start)
+        )
+
     def is_fresh(
         self,
         p_id: int,
@@ -51,6 +55,33 @@ class Database:
             self.__ids,
         )
 
+    def get_max_nb_fresh_ids(
+        self,
+    ) -> int:
+        min_id: int = min(map(lambda l_range: l_range.start, self.__ranges))
+        max_id: int = max(map(lambda l_range: l_range.stop, self.__ranges))
+
+        nb_fresh_id: int = 0
+        nb_id_to_check: int = max_id - min_id
+        id_to_check: int = min_id
+
+        while id_to_check < max_id:
+            purcent: float = (id_to_check - min_id) / nb_id_to_check
+            print(f"{purcent: >7.2%}")
+            for l_range in self.__ranges:
+                if id_to_check in l_range:
+                    nb_fresh_id += l_range.stop - id_to_check
+                    id_to_check = l_range.stop
+                    break
+            else:
+                id_to_check = min(
+                    l_range.start
+                    for l_range in self.__ranges
+                    if l_range.start > id_to_check
+                )
+
+        return nb_fresh_id
+
 
 def main() -> None:
     database: Database = Database(
@@ -58,7 +89,7 @@ def main() -> None:
             encoding=encodings.utf_8.getregentry().name,
         ),
     )
-    print(len(tuple(database.get_fresh_ids())))
+    print(database.get_max_nb_fresh_ids())
 
 
 if __name__ == "__main__":
