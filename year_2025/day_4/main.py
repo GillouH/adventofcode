@@ -18,7 +18,10 @@ class Grid:
         self,
         p_diagram: str,
     ):
-        self.__lines: tuple[str, ...] = tuple(p_diagram.splitlines())
+        self.__lines: list[list[str]] = list(map(
+            list,
+            p_diagram.splitlines(),
+        ))
         assert all(
             len(line) == len(self.__lines[0])
             for line in self.__lines[1:]
@@ -65,6 +68,51 @@ class Grid:
             if (line_index, column_index) != (p_line_index, p_column_index):
                 yield self.__lines[line_index][column_index]
 
+    def is_roll_removable(
+        self,
+        p_line_index: int,
+        p_column_index: int,
+    ) -> bool:
+        assert self.__lines[p_line_index][p_column_index] == "@"
+        nb_adjacent_rolls: int = tuple(self.get_adjacent_elements(
+            p_line_index=p_line_index,
+            p_column_index=p_column_index,
+        )).count("@")
+        return nb_adjacent_rolls < 4
+
+    def remove_roll(
+        self,
+        p_line_index: int,
+        p_column_index: int,
+    ):
+        assert self.__lines[p_line_index][p_column_index] == "@"
+        self.__lines[p_line_index][p_column_index] = "x"
+
+    def remove_rolls(
+        self,
+    ) -> bool:
+        a_roll_has_been_removed: bool = False
+        for roll_position in filter(
+            lambda p_roll_position: self.is_roll_removable(
+                p_line_index=p_roll_position[0],
+                p_column_index=p_roll_position[1],
+            ),
+            self.get_rolls_position(),
+        ):
+            roll_line, roll_column = roll_position
+            self.remove_roll(
+                p_line_index=roll_line,
+                p_column_index=roll_column,
+            )
+            a_roll_has_been_removed |= True
+
+        return a_roll_has_been_removed
+
+    def get_nb_removed_rolls(
+        self,
+    ) -> int:
+        return sum(line.count("x") for line in self.__lines)
+
 
 def main() -> None:
     grid: Grid = Grid(
@@ -72,16 +120,9 @@ def main() -> None:
             encoding=encodings.utf_8.getregentry().name,
         ),
     )
-    nb_rolls_accessible: int = 0
-    for roll_position in grid.get_rolls_position():
-        line, column = roll_position
-        nb_adjacent_rolls: int = tuple(grid.get_adjacent_elements(
-            p_line_index=line,
-            p_column_index=column,
-        )).count("@")
-        nb_rolls_accessible += int(nb_adjacent_rolls < 4)
-
-    print(nb_rolls_accessible)
+    while grid.remove_rolls():
+        pass
+    print(grid.get_nb_removed_rolls())
 
 
 if __name__ == "__main__":
