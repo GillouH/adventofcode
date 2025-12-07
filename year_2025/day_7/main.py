@@ -39,6 +39,43 @@ class Diagram:
 
         return nb_split
 
+    def get_tachyon_indexes_possibilities(
+        self,
+        p_line: str,
+        p_tachyon_indexes_ponderated_before: list[int],
+    ) -> list[int]:
+        new_tachyon_indexes_ponderated_before: list[int] = [
+            0 for _ in range(len(self.__lines[0]))
+        ]
+        for index, index_ponderated in enumerate(
+            p_tachyon_indexes_ponderated_before
+        ):
+            if p_line[index] == ".":
+                new_tachyon_indexes_ponderated_before[index] += index_ponderated
+            elif p_line[index] == "^":
+                new_tachyon_indexes_ponderated_before[index - 1] += \
+                    index_ponderated
+                new_tachyon_indexes_ponderated_before[index + 1] += \
+                    index_ponderated
+            else:
+                raise Exception(p_line[index])
+
+        return new_tachyon_indexes_ponderated_before
+
+    def get_nb_timeline(
+        self,
+    ) -> int:
+        tachyon_indexes_ponderated: list[int] = [
+            0 for _ in range(len(self.__lines[0]))
+        ]
+        tachyon_indexes_ponderated[self.__lines[0].find("S")] = 1
+        for line in self.__lines[1:]:
+            tachyon_indexes_ponderated = self.get_tachyon_indexes_possibilities(
+                p_line=line,
+                p_tachyon_indexes_ponderated_before=tachyon_indexes_ponderated,
+            )
+        return sum(tachyon_indexes_ponderated)
+
 
 def main() -> None:
     diagram: Diagram = Diagram(
@@ -46,7 +83,7 @@ def main() -> None:
             encoding=encodings.utf_8.getregentry().name,
         ),
     )
-    print(diagram.get_nb_split())
+    print(diagram.get_nb_timeline())
 
 
 if __name__ == "__main__":
