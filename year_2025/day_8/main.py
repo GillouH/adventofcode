@@ -211,13 +211,16 @@ class Circuit:
         return len(self.__boxes)
 
 
+def get_circuits_set(
+    p_boxes: typing.Iterable[Boxe],
+) -> set[Circuit]:
+    return set(map(
+        lambda boxe: boxe.circuit,
+        p_boxes,
+    ))
+
+
 def main() -> None:
-    nb_connections_to_make: int
-    if TEST:
-        nb_connections_to_make = 10
-    else:
-        nb_connections_to_make = 1_000
-    nb_circuit_size_to_multiply: int = 3
     boxes: tuple[Boxe, ...] = tuple(
         Boxe(
             p_id=l_id,
@@ -240,8 +243,12 @@ def main() -> None:
         ).items()),
         key=lambda key_value: key_value[1],
     )
-    for index in range(nb_connections_to_make):
-        id_boxe1, id_boxe2 = boxes_distances_sorted[index][0]
+
+    index_connection: int = 0
+    while len(get_circuits_set(
+        p_boxes=boxes,
+    )) > 1 and index_connection < len(boxes_distances_sorted):
+        id_boxe1, id_boxe2 = boxes_distances_sorted[index_connection][0]
         boxe1, boxe2 = map(
             lambda id_boxe: next(filter(
                 lambda boxe: boxe.id == id_boxe,
@@ -252,20 +259,11 @@ def main() -> None:
         boxe1.circuit.add_boxe(
             p_boxe=boxe2,
         )
+        index_connection += 1
 
-    circuits: list[Circuit] = sorted(
-        list(set(map(
-            lambda boxe: boxe.circuit,
-            boxes,
-        ))),
-        key=lambda circuit: len(circuit.boxes),
-        reverse=True,
-    )
-    product: int = 1
-    for circuit in circuits[:nb_circuit_size_to_multiply]:
-        product *= len(circuit)
+    assert index_connection < len(boxes_distances_sorted)
 
-    print(product)
+    print(boxe1.x * boxe2.x)
 
 
 if __name__ == "__main__":
